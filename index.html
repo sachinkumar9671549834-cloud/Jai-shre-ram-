@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GK Quiz App</title>
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      width: 400px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    button {
+      background-color: #ffcc00;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 15px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #ffaa00;
+    }
+
+    .options button {
+      display: block;
+      background: white;
+      color: black;
+      width: 100%;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .options button:hover {
+      background-color: #ddd;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    select {
+      margin-bottom: 20px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🧠 GK Quiz App</h1>
+
+    <!-- Repository Selector -->
+    <div>
+      <label>Choose Question Set:</label><br>
+      <select id="setSelect">
+        <option value="st1.json">Set 1</option>
+        <option value="st2.json">Set 2</option>
+        <option value="st3.json">Set 3</option>
+      </select>
+      <button id="loadBtn">Load Questions</button>
+    </div>
+
+    <div id="quiz" class="hidden">
+      <div id="question">Question text</div>
+      <div id="options" class="options"></div>
+      <button id="nextBtn" style="display:none;">Next</button>
+    </div>
+
+    <div id="result" class="hidden">
+      <h2>आपका स्कोर: <span id="score"></span></h2>
+      <button id="restartBtn">फिर से शुरू करें</button>
+    </div>
+
+    <p id="errorMsg" style="color:#ff5555;"></p>
+  </div>
+
+  <script>
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const nextBtn = document.getElementById("nextBtn");
+    const resultEl = document.getElementById("result");
+    const quizEl = document.getElementById("quiz");
+    const scoreEl = document.getElementById("score");
+    const restartBtn = document.getElementById("restartBtn");
+    const loadBtn = document.getElementById("loadBtn");
+    const setSelect = document.getElementById("setSelect");
+    const errorMsg = document.getElementById("errorMsg");
+
+    async function loadQuestions(file) {
+      try {
+        const res = await fetch(file);
+        if (!res.ok) throw new Error("File not found");
+        questions = await res.json();
+        currentQuestionIndex = 0;
+        score = 0;
+        errorMsg.textContent = "";
+        document.querySelector("select").disabled = true;
+        loadBtn.style.display = "none";
+        quizEl.classList.remove("hidden");
+        loadQuestion();
+      } catch (err) {
+        errorMsg.textContent = "❌ प्रश्न लोड करने में समस्या: " + err.message;
+      }
+    }
+
+    function loadQuestion() {
+      const current = questions[currentQuestionIndex];
+      questionEl.textContent = current.question;
+      optionsEl.innerHTML = "";
+      nextBtn.style.display = "none";
+
+      current.options.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option;
+        button.onclick = () => checkAnswer(option);
+        optionsEl.appendChild(button);
+      });
+    }
+
+    function checkAnswer(selected) {
+      const correct = questions[currentQuestionIndex].answer;
+      if (selected === correct) score++;
+
+      Array.from(optionsEl.children).forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === correct) {
+          btn.style.backgroundColor = "#28a745";
+          btn.style.color = "white";
+        } else if (btn.textContent === selected) {
+          btn.style.backgroundColor = "#dc3545";
+          btn.style.color = "white";
+        }
+      });
+
+      nextBtn.style.display = "block";
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    });
+
+    function showResult() {
+      quizEl.classList.add("hidden");
+      resultEl.classList.remove("hidden");
+      scoreEl.textContent = `${score} / ${questions.length}`;
+    }
+
+    restartBtn.addEventListener("click", () => {
+      resultEl.classList.add("hidden");
+      document.querySelector("select").disabled = false;
+      loadBtn.style.display = "inline-block";
+    });
+
+    loadBtn.addEventListener("click", () => {
+      const selectedFile = setSelect.value;
+      loadQuestions(selectedFile);
+    });
+  </script>
+</body>
+</html>
