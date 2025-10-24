@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz</title>
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      width: 420px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 26px;
+    }
+
+    #question {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .options button {
+      display: block;
+      background: white;
+      color: black;
+      width: 100%;
+      margin: 12px 0;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .options button:hover {
+      background-color: #eee;
+      transform: scale(1.02);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    button {
+      background-color: #ffcc00;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 15px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #ffaa00;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🧠 GK Quiz</h1>
+
+    <div id="quiz">
+      <div id="question">Question text</div>
+      <div id="options" class="options"></div>
+    </div>
+
+    <div id="result" class="hidden">
+      <h2>आपका स्कोर: <span id="score"></span></h2>
+      <button id="restartBtn">फिर से शुरू करें</button>
+    </div>
+  </div>
+
+  <script>
+    // 🔹 External question file (example: st1.json)
+    const questionFile = "st1.json";
+
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const resultEl = document.getElementById("result");
+    const quizEl = document.getElementById("quiz");
+    const scoreEl = document.getElementById("score");
+    const restartBtn = document.getElementById("restartBtn");
+
+    async function loadQuestions() {
+      try {
+        const res = await fetch(questionFile);
+        questions = await res.json();
+        loadQuestion();
+      } catch (err) {
+        questionEl.textContent = "❌ प्रश्न लोड करने में समस्या आई।";
+      }
+    }
+
+    function loadQuestion() {
+      if (currentQuestionIndex >= questions.length) {
+        showResult();
+        return;
+      }
+
+      const current = questions[currentQuestionIndex];
+      questionEl.textContent = current.question;
+      optionsEl.innerHTML = "";
+
+      current.options.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option;
+        button.onclick = () => checkAnswer(button, option);
+        optionsEl.appendChild(button);
+      });
+    }
+
+    function checkAnswer(button, selected) {
+      const correct = questions[currentQuestionIndex].answer;
+
+      Array.from(optionsEl.children).forEach(btn => (btn.disabled = true));
+
+      if (selected === correct) {
+        score++;
+        button.style.backgroundColor = "#28a745";
+        button.style.color = "white";
+      } else {
+        button.style.backgroundColor = "#dc3545";
+        button.style.color = "white";
+      }
+
+      // 🔹 Auto move to next question after 1 sec
+      setTimeout(() => {
+        currentQuestionIndex++;
+        loadQuestion();
+      }, 1000);
+    }
+
+    function showResult() {
+      quizEl.classList.add("hidden");
+      resultEl.classList.remove("hidden");
+      scoreEl.textContent = `${score} / ${questions.length}`;
+    }
+
+    restartBtn.addEventListener("click", () => {
+      currentQuestionIndex = 0;
+      score = 0;
+      resultEl.classList.add("hidden");
+      quizEl.classList.remove("hidden");
+      loadQuestion();
+    });
+
+    loadQuestions();
+  </script>
+</body>
+</html>
